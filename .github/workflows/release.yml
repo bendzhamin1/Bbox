@@ -14,6 +14,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Remove old CI log releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release list --json tagName --jq '.[].tagName' 2>/dev/null \
+            | grep '^cilog-' | while read -r t; do
+              gh release delete "$t" --yes --cleanup-tag || true
+            done || true
+
       - name: Show toolchain
         run: |
           swift --version 2>&1 | tee -a build.log
