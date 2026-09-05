@@ -4,9 +4,13 @@ struct HistoryView: View {
     @ObservedObject var store: HistoryStore
     let onPaste: (ClipItem) -> Void
     let onClose: () -> Void
+    let onQuit: () -> Void
+    let onOpenAccessibility: () -> Void
+    let checkTrusted: () -> Bool
 
     @State private var query: String = ""
     @State private var selection: Int = 0
+    @State private var needsAccessibility: Bool = false
     @FocusState private var searchFocused: Bool
 
     private var results: [ClipItem] {
@@ -18,6 +22,9 @@ struct HistoryView: View {
             header
             searchBar
             list
+            if needsAccessibility {
+                accessibilityBanner
+            }
             footer
         }
         .frame(width: PanelController.panelWidth, height: PanelController.panelHeight)
@@ -30,7 +37,28 @@ struct HistoryView: View {
         .onAppear {
             selection = 0
             searchFocused = true
+            needsAccessibility = !checkTrusted()
         }
+    }
+
+    private var accessibilityBanner: some View {
+        Button(action: onOpenAccessibility) {
+            HStack(spacing: 8) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+                Text("Разрешите вставку в «Универсальном доступе»")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.primary)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(Color.orange.opacity(0.12))
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Liquid glass background
@@ -64,6 +92,14 @@ struct HistoryView: View {
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
             .help("Очистить (закреплённые останутся)")
+
+            Button(action: onQuit) {
+                Image(systemName: "power")
+                    .font(.system(size: 12))
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            .help("Выйти из Bbox")
         }
         .padding(.horizontal, 16)
         .padding(.top, 14)

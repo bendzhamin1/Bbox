@@ -9,7 +9,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var monitor: ClipboardMonitor!
     private var panelController: PanelController!
     private var hotKey: HotKey?
-    private var statusItem: NSStatusItem!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Only one copy may run: two instances would poll and write the same
@@ -19,14 +18,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        // Menu bar only — no Dock icon.
+        // No Dock icon and no menu bar icon. The app is invisible and is driven
+        // entirely by the Option+V hotkey. Quitting is done from inside the panel.
         NSApp.setActivationPolicy(.accessory)
+        setupHiddenMenu()
 
         monitor = ClipboardMonitor(store: store)
         panelController = PanelController(store: store, monitor: monitor)
         monitor.start()
-
-        setupStatusItem()
 
         // Global hotkey: Option+V toggles the panel.
         hotKey = HotKey(keyCode: UInt32(kVK_ANSI_V),
@@ -34,13 +33,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.panelController.toggle()
         }
 
-        // "Install and forget": start automatically at login.
+        // Start automatically at login.
         enableLaunchAtLogin()
 
         // Ask for Accessibility permission on first run so paste-back works.
         if !Paster.hasAccessibilityPermission(prompt: false) {
             _ = Paster.hasAccessibilityPermission(prompt: true)
         }
+    }
+
+    /// A minimal main menu that is never shown (accessory apps have no menu bar),
+    /// but lets Cmd+Q quit while the panel is focused.
+    private func setupHiddenMenu() {
+        let mainMenu = NSMenu()
+        let appItem = NSMenuItem()
+        let appMenu = NSMenu()
+        appMenu.addItem(withTitle: "Quit Bbox", action: #selector(quit), keyEquivalent: "q")
+        appMenu.items.forEach { $0.target = self }
+        appItem.submenu = appMenu
+        mainMenu.addItem(appItem)
+        NSApp.mainMenu = mainMenu
     }
 
     private func isAnotherInstanceRunning() -> Bool {
@@ -58,60 +70,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         } catch {
             NSLog("Bbox: launch-at-login registration failed: \(error)")
-        }
-    }
-
-    private func setupStatusItem() {
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "doc.on.clipboard",
-                                   accessibilityDescription: "Bbox")
-            button.image?.isTemplate = true
-            button.action = #selector(statusItemClicked)
-            button.target = self
-            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
-        }
-    }
-
-    @objc private func statusItemClicked() {
-        let event = NSApp.currentEvent
-        if event?.type == .rightMouseUp {
-            showMenu()
-        } else {
-            panelController.toggle()
-        }
-    }
-
-    private func showMenu() {
-        let menu = NSMenu()
-        menu.addItem(withTitle: "Открыть буфер  (⌥V)",
-                     action: #selector(openPanel), keyEquivalent: "")
-        menu.addItem(.separator())
-
-        let accessibilityOK = Paster.hasAccessibilityPermission(prompt: false)
-        let permItem = NSMenuItem(
-            title: accessibilityOK ? "Доступ к вставке: включён" : "Включить авто-вставку…",
-            action: accessibilityOK ? nil : #selector(openAccessibilitySettings),
-            keyEquivalent: ""
-        )
-        menu.addItem(permItem)
-
-        menu.addItem(.separator())
-        menu.addItem(withTitle: "Выход", action: #selector(quit), keyEquivalent: "q")
-
-        for item in menu.items where item.action != nil { item.target = self }
-
-        statusItem.menu = menu
-        statusItem.button?.performClick(nil)
-        statusItem.menu = nil // reset so left-click toggles the panel next time
-    }
-
-    @objc private func openPanel() { panelController.show() }
-
-    @objc private func openAccessibilitySettings() {
-        _ = Paster.hasAccessibilityPermission(prompt: true)
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-            NSWorkspace.shared.open(url)
         }
     }
 

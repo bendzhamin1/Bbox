@@ -47,6 +47,14 @@ final class PanelController: NSObject, NSWindowDelegate {
         panel?.orderOut(nil)
     }
 
+    private func openAccessibilitySettings() {
+        // Re-trigger the system prompt and open the relevant settings pane.
+        _ = Paster.hasAccessibilityPermission(prompt: true)
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
     /// Paste an item into the previously-focused application.
     private func paste(_ item: ClipItem) {
         Paster.copyToPasteboard(item, store: store, monitor: monitor)
@@ -71,7 +79,10 @@ final class PanelController: NSObject, NSWindowDelegate {
         let root = HistoryView(
             store: store,
             onPaste: { [weak self] item in self?.paste(item) },
-            onClose: { [weak self] in self?.hide() }
+            onClose: { [weak self] in self?.hide() },
+            onQuit: { NSApp.terminate(nil) },
+            onOpenAccessibility: { [weak self] in self?.openAccessibilitySettings() },
+            checkTrusted: { Paster.hasAccessibilityPermission(prompt: false) }
         )
         let hosting = NSHostingView(rootView: AnyView(root))
         hosting.wantsLayer = true

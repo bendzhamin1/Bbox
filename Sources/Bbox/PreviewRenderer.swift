@@ -18,7 +18,12 @@ enum PreviewRenderer {
                 Color(red: 0.18, green: 0.20, blue: 0.28),
                 Color(red: 0.28, green: 0.22, blue: 0.34)
             ], startPoint: .topLeading, endPoint: .bottomTrailing)
-            HistoryView(store: store, onPaste: { _ in }, onClose: {})
+            HistoryView(store: store,
+                        onPaste: { _ in },
+                        onClose: {},
+                        onQuit: {},
+                        onOpenAccessibility: {},
+                        checkTrusted: { true })
                 .padding(20)
         }
         .frame(width: w + 40, height: h + 40)
