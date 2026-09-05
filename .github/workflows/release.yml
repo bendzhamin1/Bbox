@@ -14,13 +14,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Show Swift version
-        run: swift --version
+      - name: Show toolchain
+        run: |
+          swift --version 2>&1 | tee -a build.log
+          xcodebuild -version 2>&1 | tee -a build.log || true
 
       - name: Build app bundle
         run: |
           chmod +x scripts/build_app.sh
-          ./scripts/build_app.sh "${GITHUB_REF_NAME#v}"
+          set -o pipefail
+          ./scripts/build_app.sh "${GITHUB_REF_NAME#v}" 2>&1 | tee -a build.log
 
       - name: Zip the app
         run: ditto -c -k --keepParent build/Bbox.app build/Bbox-macOS.zip
@@ -41,3 +44,15 @@ jobs:
           4. The icon appears in the menu bar at the top. Press Option+V to show the clipboard.
 
           You can keep Bbox.app anywhere, for example in Applications or on the Desktop. It starts automatically when you log in."
+
+      - name: Publish build log on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tail -c 55000 build.log > taillog.txt || cp build.log taillog.txt
+          gh release delete "cilog-${GITHUB_REF_NAME}" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "cilog-${GITHUB_REF_NAME}" \
+            --title "CI log ${GITHUB_REF_NAME}" \
+            --notes-file taillog.txt \
+            --prerelease
