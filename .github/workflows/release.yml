@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Swift version
+        run: swift --version
+
+      - name: Build app bundle
+        run: |
+          chmod +x scripts/build_app.sh
+          ./scripts/build_app.sh "${GITHUB_REF_NAME#v}"
+
+      - name: Zip the app
+        run: ditto -c -k --keepParent build/Bbox.app build/Bbox-macOS.zip
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            build/Bbox-macOS.zip \
+            --title "Bbox $GITHUB_REF_NAME" \
+            --notes "Portable app for macOS. No installer.
+
+          How to run:
+          1. Download Bbox-macOS.zip below.
+          2. Double click it to unzip. You get Bbox.app.
+          3. Right click Bbox.app and choose Open, then Open again. This first step is needed once because the app is not signed with a paid Apple certificate.
+          4. The icon appears in the menu bar at the top. Press Option+V to show the clipboard.
+
+          You can keep Bbox.app anywhere, for example in Applications or on the Desktop. It starts automatically when you log in."
