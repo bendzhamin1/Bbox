@@ -17,7 +17,12 @@ enum Paster {
             return pb.setString(item.payload, forType: .string)
         case .image:
             guard let data = try? Data(contentsOf: store.imageURL(for: item)) else { return false }
-            return pb.setData(data, forType: .png)
+            // Offer both PNG and TIFF so any target app can accept the image.
+            pb.setData(data, forType: .png)
+            if let image = NSImage(data: data), let tiff = image.tiffRepresentation {
+                pb.setData(tiff, forType: .tiff)
+            }
+            return true
         }
     }
 
