@@ -46,7 +46,10 @@ final class PanelController: NSObject, NSWindowDelegate {
         // Do NOT activate the app: a non-activating panel becomes key for typing
         // while the app the user was in stays active, so its text field keeps its
         // insertion point and Cmd+V lands there after we close.
-        panel.makeKeyAndOrderFront(nil)
+        // orderFrontRegardless brings it visually above other apps' windows even
+        // though our app is not the active one; makeKey lets it receive keys.
+        panel.orderFrontRegardless()
+        panel.makeKey()
     }
 
     func hide() {
