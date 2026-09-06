@@ -41,6 +41,11 @@ final class PanelController: NSObject, NSWindowDelegate {
         let panel = panel ?? makePanel()
         self.panel = panel
 
+        // Rebuild the SwiftUI content each time so the list always reflects the
+        // current history (a reused off-screen hosting view can show a stale
+        // snapshot).
+        panel.contentView = makeHostingView()
+
         positionPanel(panel)
         NSApp.activate(ignoringOtherApps: true)
         panel.makeKeyAndOrderFront(nil)
@@ -70,7 +75,7 @@ final class PanelController: NSObject, NSWindowDelegate {
 
     // MARK: - Panel construction
 
-    private func makePanel() -> KeyablePanel {
+    private func makeHostingView() -> NSHostingView<AnyView> {
         let root = HistoryView(
             store: store,
             onPaste: { [weak self] item in self?.paste(item) },
@@ -79,6 +84,11 @@ final class PanelController: NSObject, NSWindowDelegate {
         )
         let hosting = NSHostingView(rootView: AnyView(root))
         hosting.wantsLayer = true
+        return hosting
+    }
+
+    private func makePanel() -> KeyablePanel {
+        let hosting = makeHostingView()
 
         let panel = KeyablePanel(
             contentRect: NSRect(x: 0, y: 0, width: Self.panelWidth, height: Self.panelHeight),
