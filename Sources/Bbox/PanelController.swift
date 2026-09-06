@@ -58,17 +58,20 @@ final class PanelController: NSObject, NSWindowDelegate {
     /// Paste an item into the previously-focused application.
     private func paste(_ item: ClipItem) {
         Paster.copyToPasteboard(item, store: store, monitor: monitor)
-        hide()
 
         let canSendKeys = Paster.hasAccessibilityPermission(prompt: false)
         let prev = previousApp
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+        // Hide our panel and hand focus back to the app that was in front, then
+        // press Cmd+V there. Give focus time to return before the keystroke.
+        hide()
+        prev?.activate()
+
+        guard canSendKeys else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
             prev?.activate()
-            if canSendKeys {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.06) {
-                    Paster.simulatePaste()
-                }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                Paster.simulatePaste()
             }
         }
     }

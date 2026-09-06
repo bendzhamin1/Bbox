@@ -36,9 +36,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Start automatically at login.
         enableLaunchAtLogin()
 
-        // Note: we never prompt for Accessibility. Enter auto-pastes only if the
-        // permission already exists; otherwise the item is left on the clipboard
-        // for a manual Cmd+V. No nagging dialogs.
+        // Ask for the paste permission exactly once, on the very first launch.
+        promptAccessibilityOnce()
+    }
+
+    /// Shows the system Accessibility prompt a single time, ever. After that the
+    /// user grants it manually in System Settings if they skipped it.
+    private func promptAccessibilityOnce() {
+        let key = "Bbox.didAskAccessibility"
+        let alreadyAsked = UserDefaults.standard.bool(forKey: key)
+        guard !alreadyAsked else { return }
+        UserDefaults.standard.set(true, forKey: key)
+        if !Paster.hasAccessibilityPermission(prompt: false) {
+            _ = Paster.hasAccessibilityPermission(prompt: true)
+        }
     }
 
     /// A minimal main menu that is never shown (accessory apps have no menu bar),
