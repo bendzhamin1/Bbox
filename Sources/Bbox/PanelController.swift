@@ -58,6 +58,7 @@ final class PanelController: NSObject, NSWindowDelegate {
     /// Paste an item into the previously-focused application.
     private func paste(_ item: ClipItem) {
         Paster.copyToPasteboard(item, store: store, monitor: monitor)
+        store.moveToTop(item)   // the just-used item becomes the most recent
 
         let canSendKeys = Paster.hasAccessibilityPermission(prompt: false)
         let prev = previousApp

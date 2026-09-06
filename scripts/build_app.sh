@@ -9,7 +9,7 @@ BUNDLE_ID="com.bbox.app"
 BUILD_DIR=".build/release"
 APP_DIR="build/${APP_NAME}.app"
 CONTENTS="${APP_DIR}/Contents"
-VERSION="${1:-1.0.10}"
+VERSION="${1:-1.0.11}"
 
 echo "▶ Building ${APP_NAME} (release)…"
 swift build -c release
@@ -42,9 +42,27 @@ cat > "${CONTENTS}/Info.plist" <<PLIST
 </plist>
 PLIST
 
-# Ad-hoc code signature so macOS lets it run locally without Gatekeeper nagging.
-echo "▶ Ad-hoc signing…"
-codesign --force --deep --sign - "${APP_DIR}" 2>/dev/null || echo "  (codesign skipped)"
+# Clear extended attributes so codesign does not choke on "detritus".
+xattr -cr "${APP_DIR}" 2>/dev/null || true
+
+# Prefer a stable local self-signed identity so the app keeps the same
+# designated requirement across rebuilds. This lets a granted Accessibility
+# permission survive reinstalls. Falls back to ad-hoc (e.g. on CI) when the
+# local signing keychain is absent.
+SIGN_KC="${HOME}/Library/Keychains/bbox-signing.keychain-db"
+SIGN_ID="Bbox Signing"
+if [ -f "${SIGN_KC}" ] && security find-identity -p codesigning "${SIGN_KC}" 2>/dev/null | grep -q "${SIGN_ID}"; then
+  echo "▶ Signing with stable identity '${SIGN_ID}'…"
+  security unlock-keychain -p "bbox-local-signing" "${SIGN_KC}" 2>/dev/null || true
+  # codesign resolves the identity via the keychain search list; make sure our
+  # signing keychain is on it (keeping the existing ones too).
+  security list-keychains -d user -s "${SIGN_KC}" $(security list-keychains -d user | sed 's/"//g') 2>/dev/null || true
+  codesign --force --deep --sign "${SIGN_ID}" --keychain "${SIGN_KC}" "${APP_DIR}" \
+    && echo "  signed (stable)" || echo "  (stable signing failed)"
+else
+  echo "▶ Ad-hoc signing…"
+  codesign --force --deep --sign - "${APP_DIR}" 2>/dev/null || echo "  (codesign skipped)"
+fi
 
 echo "✅ Done: ${APP_DIR}"
 echo "   Run with: open \"${APP_DIR}\""

@@ -100,6 +100,15 @@ final class HistoryStore: ObservableObject {
         trimAndSave()
     }
 
+    /// Move an item to the top (most recent) after it is pasted.
+    func moveToTop(_ item: ClipItem) {
+        guard let idx = items.firstIndex(where: { $0.id == item.id }) else { return }
+        var it = items.remove(at: idx)
+        it.createdAt = Date()
+        items.insert(it, at: 0)
+        save()
+    }
+
     func togglePin(_ item: ClipItem) {
         guard let idx = items.firstIndex(where: { $0.id == item.id }) else { return }
         items[idx].pinned.toggle()
