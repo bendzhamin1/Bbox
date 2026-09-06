@@ -13,7 +13,8 @@ struct BboxApp {
         if let idx = CommandLine.arguments.firstIndex(of: "--render"),
            idx + 1 < CommandLine.arguments.count {
             app.setActivationPolicy(.accessory)
-            PreviewRenderer.render(to: CommandLine.arguments[idx + 1])
+            let real = CommandLine.arguments.contains("--real")
+            PreviewRenderer.render(to: CommandLine.arguments[idx + 1], useRealStore: real)
             return
         }
 

@@ -5,9 +5,14 @@ import SwiftUI
 /// for design previews; not part of the shipping runtime path.
 @MainActor
 enum PreviewRenderer {
-    static func render(to path: String) {
-        let store = HistoryStore(ephemeral: true)
-        store.seedPreview()
+    static func render(to path: String, useRealStore: Bool = false) {
+        let store: HistoryStore
+        if useRealStore {
+            store = HistoryStore()          // reads the real on-disk history
+        } else {
+            store = HistoryStore(ephemeral: true)
+            store.seedPreview()
+        }
 
         let w = PanelController.panelWidth
         let h = PanelController.panelHeight
