@@ -20,7 +20,7 @@ final class ClipboardMonitor {
 
     func start() {
         timer?.invalidate()
-        let timer = Timer(timeInterval: 0.4, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 0.1, repeats: true) { [weak self] _ in
             // The timer is added to the main run loop, so this fires on the main
             // thread; assume the main actor instead of hopping through a Task
             // (which older Swift rejects for capturing self concurrently).
