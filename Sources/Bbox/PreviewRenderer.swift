@@ -21,9 +21,7 @@ enum PreviewRenderer {
             HistoryView(store: store,
                         onPaste: { _ in },
                         onClose: {},
-                        onQuit: {},
-                        onOpenAccessibility: {},
-                        checkTrusted: { true })
+                        onQuit: {})
                 .padding(20)
         }
         .frame(width: w + 40, height: h + 40)

@@ -36,10 +36,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Start automatically at login.
         enableLaunchAtLogin()
 
-        // Ask for Accessibility permission on first run so paste-back works.
-        if !Paster.hasAccessibilityPermission(prompt: false) {
-            _ = Paster.hasAccessibilityPermission(prompt: true)
-        }
+        // Note: we never prompt for Accessibility. Enter auto-pastes only if the
+        // permission already exists; otherwise the item is left on the clipboard
+        // for a manual Cmd+V. No nagging dialogs.
     }
 
     /// A minimal main menu that is never shown (accessory apps have no menu bar),
