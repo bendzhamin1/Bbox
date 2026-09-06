@@ -97,7 +97,10 @@ final class PanelController: NSObject, NSWindowDelegate {
             defer: false
         )
         panel.level = .floating
-        panel.hidesOnDeactivate = true
+        // Must be false: the app is never activated, so a true value would make
+        // macOS hide the panel immediately (it would still grab keys, blocking
+        // typing in the app underneath). We close it ourselves on Esc/resign key.
+        panel.hidesOnDeactivate = false
         panel.isFloatingPanel = true
         panel.isOpaque = false
         panel.backgroundColor = .clear
