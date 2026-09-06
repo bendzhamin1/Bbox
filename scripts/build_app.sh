@@ -9,7 +9,7 @@ BUNDLE_ID="com.bbox.app"
 BUILD_DIR=".build/release"
 APP_DIR="build/${APP_NAME}.app"
 CONTENTS="${APP_DIR}/Contents"
-VERSION="${1:-1.0.4}"
+VERSION="${1:-1.0.5}"
 
 echo "▶ Building ${APP_NAME} (release)…"
 swift build -c release

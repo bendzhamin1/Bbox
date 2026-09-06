@@ -37,6 +37,12 @@ final class ClipboardMonitor {
         timer = nil
     }
 
+    /// Capture the current clipboard immediately (called when the panel opens so
+    /// a copy made a split second earlier is already in the list).
+    func captureNow() {
+        poll()
+    }
+
     /// Call before programmatically setting the pasteboard so the resulting
     /// change is not recorded again.
     func suppressNextCapture() {

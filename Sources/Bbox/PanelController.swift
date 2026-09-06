@@ -35,6 +35,9 @@ final class PanelController: NSObject, NSWindowDelegate {
         // Remember who was in front so we can paste back into them.
         previousApp = NSWorkspace.shared.frontmostApplication
 
+        // Grab whatever was just copied before showing the list.
+        monitor.captureNow()
+
         let panel = panel ?? makePanel()
         self.panel = panel
 
