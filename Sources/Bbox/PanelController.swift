@@ -14,7 +14,6 @@ final class PanelController: NSObject, NSWindowDelegate {
     private let store: HistoryStore
     private let monitor: ClipboardMonitor
     private var panel: KeyablePanel?
-    private weak var previousApp: NSRunningApplication?
 
     static let panelWidth: CGFloat = 300
     static let panelHeight: CGFloat = 420
@@ -32,9 +31,6 @@ final class PanelController: NSObject, NSWindowDelegate {
     }
 
     func show() {
-        // Remember who was in front so we can paste back into them.
-        previousApp = NSWorkspace.shared.frontmostApplication
-
         // Grab whatever was just copied before showing the list.
         monitor.captureNow()
 
@@ -47,7 +43,9 @@ final class PanelController: NSObject, NSWindowDelegate {
         panel.contentView = makeHostingView()
 
         positionPanel(panel)
-        NSApp.activate(ignoringOtherApps: true)
+        // Do NOT activate the app: a non-activating panel becomes key for typing
+        // while the app the user was in stays active, so its text field keeps its
+        // insertion point and Cmd+V lands there after we close.
         panel.makeKeyAndOrderFront(nil)
     }
 
@@ -61,19 +59,14 @@ final class PanelController: NSObject, NSWindowDelegate {
         store.moveToTop(item)   // the just-used item becomes the most recent
 
         let canSendKeys = Paster.hasAccessibilityPermission(prompt: false)
-        let prev = previousApp
 
-        // Hide our panel and hand focus back to the app that was in front, then
-        // press Cmd+V there. Give focus time to return before the keystroke.
+        // Closing the panel returns key focus to the app the user was in (it was
+        // never deactivated), so its text field is focused again and Cmd+V lands.
         hide()
-        prev?.activate()
 
         guard canSendKeys else { return }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            prev?.activate()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                Paster.simulatePaste()
-            }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+            Paster.simulatePaste()
         }
     }
 
